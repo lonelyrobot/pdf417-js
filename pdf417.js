@@ -1,11 +1,13 @@
 var PDF417 = {
-	ROWHEIGHT: 4,
 	QUIETH: 2,
 	QUIETV: 2,
 
 	barcode_array: {},
 	start_pattern: '11111111010101000',
 	stop_pattern: '111111101000101001',
+	row_height: 4,
+	compact_format: false,
+	compact_stop_pattern: '1',
 
 	/**
 	 * Array of text Compaction Sub-Modes (values 0xFB - 0xFF are used for submode changers).	 
@@ -454,7 +456,8 @@ var PDF417 = {
 		var errsize = (2 << ecl);
 		// calculate number of columns (number of codewords per row) and rows
 		var nce = (numcw + errsize + 1);
-		var cols = Math.round((Math.sqrt(4761 + (68 * aspectratio * this.ROWHEIGHT * nce)) - 69) / 34);
+		var cols = Math.round((Math.sqrt(4761 + (68 * aspectratio * this.row_height * nce)) - 69) / 34);
+		
 		// adjust cols
 		if (cols < 1) {
 			cols = 1;
@@ -506,8 +509,9 @@ var PDF417 = {
 		codewords = codewords.concat(ecw);
 		// add horizontal quiet zones to start and stop patterns
 		var pstart = this._str_repeat('0', this.QUIETH) + this.start_pattern;
-		var pstop = this.stop_pattern + "" + this._str_repeat('0', this.QUIETH);
-		this.barcode_array['num_rows'] = (rows * this.ROWHEIGHT) + (2 * this.QUIETV);
+		var stop_pattern = this.compact_format ? this.compact_stop_pattern : this.stop_pattern;
+		var pstop = stop_pattern + "" + this._str_repeat('0', this.QUIETH);
+		this.barcode_array['num_rows'] = (rows * this.row_height) + (2 * this.QUIETV);
 		this.barcode_array['num_cols'] = ((cols + 2) * 17) + 35 + (2 * this.QUIETH);
 		this.barcode_array['bcode'] = [];
 
@@ -564,13 +568,15 @@ var PDF417 = {
 				}
 			}
 			// right row indicator
-			row += this._sprintf('%17b', this.clusters[cid][L]);
+			if (!this.compact_format) {
+				row += this._sprintf('%17b', this.clusters[cid][L]);
+			}
 			// row stop code
 			row += pstop;
 			// convert the string to array
 			var arow = this._preg_split('//', row, -1, 'PREG_SPLIT_NO_EMPTY');
 			// duplicate row to get the desired height
-			for (var h = 0; h < this.ROWHEIGHT; ++h) {
+			for (var h = 0; h < this.row_height; ++h) {
 				this.barcode_array['bcode'].push(arow);
 			}
 			++cid;
@@ -839,6 +845,14 @@ var PDF417 = {
 
 	getBarcodeArray: function() {
 		return this.barcode_array;
+	},
+
+	setRowHeight: function(value) {
+		this.row_height = value;
+	},
+
+	setCompactFormat: function(value) {
+		this.compact_format = value;
 	},
 
     /**
