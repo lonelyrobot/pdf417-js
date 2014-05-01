@@ -424,7 +424,7 @@ var PDF417 = {
 	 * @param ecl (int) error correction level (0-8); default -1 = automatic correction level
 	 * @param aspectratio (float) the width to height of the symbol (excluding quiet zones)	 
 	 */
-	init: function(code, ecl, aspectratio) {		
+	init: function(code, ecl, rows, cols, aspectratio) {		
 		code = unescape(encodeURIComponent(code)); // covert UTF-8 to ISO-8859-1 
 		ecl = ecl || -1;
 		aspectratio = aspectratio || 2;		
@@ -456,7 +456,7 @@ var PDF417 = {
 		var errsize = (2 << ecl);
 		// calculate number of columns (number of codewords per row) and rows
 		var nce = (numcw + errsize + 1);
-		var cols = Math.round((Math.sqrt(4761 + (68 * aspectratio * this.row_height * nce)) - 69) / 34);
+		cols = cols || Math.round((Math.sqrt(4761 + (68 * aspectratio * this.row_height * nce)) - 69) / 34);
 		
 		// adjust cols
 		if (cols < 1) {
@@ -464,8 +464,14 @@ var PDF417 = {
 		} else if (cols > 30) {
 			cols = 30;
 		}
-		var rows = Math.ceil(nce / cols);
+
+		rows = rows || Math.ceil(nce / cols);
 		var size = (cols * rows);
+		if (size < nce) {
+			rows = Math.ceil(nce / cols);
+			size = (cols * rows);
+		}
+
 		// adjust rows
 		if ((rows < 3) || (rows > 90)) {
 			if (rows < 3) {
